@@ -20,7 +20,7 @@ const generateInvoiceNumber = async () => {
 
     const latestInvoiceNo = invoices[0].invoice_no;
     const match = latestInvoiceNo.match(/INV-(\d+)/);
-    
+
     if (match) {
       const nextNumber = parseInt(match[1]) + 1;
       return `INV-${String(nextNumber).padStart(3, '0')}`;
@@ -41,11 +41,12 @@ const generateInvoiceNumber = async () => {
 const getAllInvoices = async (req, res) => {
   try {
     const { status } = req.query;
-    
+
     let query = `
       SELECT 
         i.id, i.invoice_no, i.job_card_id, i.quotation_id,
-        i.labour_amount, i.parts_amount, i.vat_percentage, i.grand_total,
+        i.labour_amount, i.labour_cost, i.parts_amount, i.parts_cost,
+        i.vat_percentage, i.grand_total, i.total_cost, i.profit_amount,
         i.status, i.created_at, i.updated_at,
         jc.job_no,
         c.name AS customer_name
@@ -65,19 +66,32 @@ const getAllInvoices = async (req, res) => {
 
     const [invoices] = await pool.execute(query, params);
 
-    const formattedInvoices = invoices.map(i => ({
-      id: i.id,
-      invoiceNo: i.invoice_no,
-      jobCard: i.job_no,
-      customerName: i.customer_name,
-      labourAmount: parseFloat(i.labour_amount) || 0,
-      partsAmount: parseFloat(i.parts_amount) || 0,
-      vatPercentage: parseFloat(i.vat_percentage) || 0,
-      grandTotal: parseFloat(i.grand_total) || 0,
-      status: i.status,
-      createdAt: i.created_at ? i.created_at.toISOString().split('T')[0] : null,
-      updatedAt: i.updated_at
-    }));
+    const formattedInvoices = invoices.map(i => {
+      const formatted = {
+        id: i.id,
+        invoiceNo: i.invoice_no,
+        jobCard: i.job_no,
+        jobCardId: i.job_card_id,
+        customerName: i.customer_name,
+        labourAmount: parseFloat(i.labour_amount) || 0,
+        partsAmount: parseFloat(i.parts_amount) || 0,
+        vatPercentage: parseFloat(i.vat_percentage) || 0,
+        grandTotal: parseFloat(i.grand_total) || 0,
+        status: i.status,
+        createdAt: i.created_at ? i.created_at.toISOString().split('T')[0] : null,
+        updatedAt: i.updated_at
+      };
+
+      // Only show profit and costs to admin
+      if (req.user && req.user.role === 'admin') {
+        formatted.labourCost = parseFloat(i.labour_cost) || 0;
+        formatted.partsCost = parseFloat(i.parts_cost) || 0;
+        formatted.totalCost = parseFloat(i.total_cost) || 0;
+        formatted.profitAmount = parseFloat(i.profit_amount) || 0;
+      }
+
+      return formatted;
+    });
 
     res.json({
       success: true,
@@ -105,7 +119,8 @@ const getInvoiceById = async (req, res) => {
     const [invoices] = await pool.execute(
       `SELECT 
         i.id, i.invoice_no, i.job_card_id, i.quotation_id,
-        i.labour_amount, i.parts_amount, i.vat_percentage, i.grand_total,
+        i.labour_amount, i.labour_cost, i.parts_amount, i.parts_cost,
+        i.vat_percentage, i.grand_total, i.total_cost, i.profit_amount,
         i.status, i.created_at, i.updated_at,
         jc.id AS job_card_id, jc.job_no, jc.vehicle_type, jc.vehicle_number,
         jc.engine_model, jc.job_type, jc.job_sub_type, jc.brand,
@@ -130,11 +145,11 @@ const getInvoiceById = async (req, res) => {
     }
 
     const i = invoices[0];
-    
+
     // Calculate VAT amount and subtotal
     const subtotal = (parseFloat(i.labour_amount) || 0) + (parseFloat(i.parts_amount) || 0);
     const vatAmount = (subtotal * (parseFloat(i.vat_percentage) || 0)) / 100;
-    
+
     const formattedInvoice = {
       id: i.id,
       invoiceNo: i.invoice_no,
@@ -173,6 +188,14 @@ const getInvoiceById = async (req, res) => {
       }
     };
 
+    // Only show profit and costs to admin
+    if (req.user && req.user.role === 'admin') {
+      formattedInvoice.labourCost = parseFloat(i.labour_cost) || 0;
+      formattedInvoice.partsCost = parseFloat(i.parts_cost) || 0;
+      formattedInvoice.totalCost = parseFloat(i.total_cost) || 0;
+      formattedInvoice.profitAmount = parseFloat(i.profit_amount) || 0;
+    }
+
     res.json({
       success: true,
       data: formattedInvoice
@@ -193,103 +216,91 @@ const getInvoiceById = async (req, res) => {
  */
 const createInvoice = async (req, res) => {
   try {
-    const { quotation, jobCard, customerName, labourAmount, partsAmount, vatPercentage, status } = req.body;
+    const { jobCard, labourAmount, labourCost, vatPercentage, discountAmount, status } = req.body;
 
-    let jobCardId = null;
-    let labour = 0;
-    let parts = 0;
-    let vat = 0;
-
-    // If quotation is provided, get data from quotation
-    if (quotation) {
-      const [quotations] = await pool.execute(
-        'SELECT job_card_id, labour_charges, parts_charges, vat_percentage FROM quotations WHERE quotation_no = ?',
-        [quotation]
-      );
-
-      if (quotations.length > 0) {
-        const q = quotations[0];
-        jobCardId = q.job_card_id;
-        labour = parseFloat(q.labour_charges) || 0;
-        parts = parseFloat(q.parts_charges) || 0;
-        vat = parseFloat(q.vat_percentage) || 0;
-      }
-    }
-
-    // If job card is provided directly
-    if (!jobCardId && jobCard) {
-      const [jobCards] = await pool.execute(
-        'SELECT id FROM job_cards WHERE job_no = ?',
-        [jobCard]
-      );
-
-      if (jobCards.length > 0) {
-        jobCardId = jobCards[0].id;
-      }
-    }
-
-    if (!jobCardId) {
+    if (!jobCard) {
       return res.status(400).json({
         success: false,
-        error: 'Job card is required'
+        error: 'Job card number is required'
       });
     }
 
-    // Override with provided values if any
-    if (labourAmount !== undefined) {
-      labour = parseFloat(labourAmount) || 0;
-    }
-    if (partsAmount !== undefined) {
-      parts = parseFloat(partsAmount) || 0;
-    }
-    if (vatPercentage !== undefined) {
-      vat = parseFloat(vatPercentage) || 0;
+    // Get job card ID and details
+    const [jobCards] = await pool.execute(
+      'SELECT id, final_amount FROM job_cards WHERE job_no = ?',
+      [jobCard]
+    );
+
+    if (jobCards.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Job card not found'
+      });
     }
 
-    // Calculate grand total
-    const subtotal = labour + parts;
-    const vatAmount = (subtotal * vat) / 100;
-    const grandTotal = subtotal + vatAmount;
+    const jobCardId = jobCards[0].id;
+    const jcLabourAmount = labourAmount !== undefined ? parseFloat(labourAmount) : (parseFloat(jobCards[0].final_amount) || 0);
+    const jcLabourCost = labourCost !== undefined ? parseFloat(labourCost) : 0;
+
+    // Fetch materials for parts calculation
+    const [materials] = await pool.execute(
+      'SELECT total_price, total_cost FROM job_card_materials WHERE job_card_id = ?',
+      [jobCardId]
+    );
+
+    let partsAmount = 0;
+    let partsCost = 0;
+
+    materials.forEach(m => {
+      partsAmount += parseFloat(m.total_price) || 0;
+      partsCost += parseFloat(m.total_cost) || 0;
+    });
+
+    const vat = vatPercentage !== undefined ? parseFloat(vatPercentage) : 15; // Default 15% as per settings
+    const discount = discountAmount !== undefined ? parseFloat(discountAmount) : 0;
+
+    // Calculate totals
+    const subtotal = jcLabourAmount + partsAmount;
+    const taxableAmount = subtotal - discount;
+    const vatAmount = (taxableAmount * vat) / 100;
+    const grandTotal = taxableAmount + vatAmount;
+
+    const totalCost = jcLabourCost + partsCost;
+    const profitAmount = (jcLabourAmount + partsAmount) - totalCost;
 
     // Generate invoice number
     const invoiceNo = await generateInvoiceNumber();
 
-    // Get quotation ID if quotation was provided
-    let quotationId = null;
-    if (quotation) {
-      const [quotations] = await pool.execute(
-        'SELECT id FROM quotations WHERE quotation_no = ?',
-        [quotation]
-      );
-      if (quotations.length > 0) {
-        quotationId = quotations[0].id;
-      }
-    }
-
     // Insert invoice
     const [result] = await pool.execute(
       `INSERT INTO invoices (
-        invoice_no, job_card_id, quotation_id,
-        labour_amount, parts_amount, vat_percentage, grand_total,
+        invoice_no, job_card_id,
+        labour_amount, labour_cost,
+        parts_amount, parts_cost,
+        vat_percentage, total_cost, grand_total, profit_amount,
         status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         invoiceNo,
         jobCardId,
-        quotationId,
-        labour,
-        parts,
+        jcLabourAmount,
+        jcLabourCost,
+        partsAmount,
+        partsCost,
         vat,
+        totalCost,
         grandTotal,
+        profitAmount,
         status || 'Unpaid'
       ]
     );
 
     // Fetch created invoice
     const [invoices] = await pool.execute(
-      `SELECT 
-        i.id, i.invoice_no, i.job_card_id, i.quotation_id,
+      `SELECT
+        i.id, i.invoice_no, i.job_card_id,
         i.labour_amount, i.parts_amount, i.vat_percentage, i.grand_total,
+        i.total_cost, i.profit_amount,
         i.status, i.created_at, i.updated_at,
         jc.job_no,
         c.name AS customer_name
@@ -305,11 +316,14 @@ const createInvoice = async (req, res) => {
       id: i.id,
       invoiceNo: i.invoice_no,
       jobCard: i.job_no,
+      jobCardId: i.job_card_id,
       customerName: i.customer_name,
       labourAmount: parseFloat(i.labour_amount) || 0,
       partsAmount: parseFloat(i.parts_amount) || 0,
       vatPercentage: parseFloat(i.vat_percentage) || 0,
       grandTotal: parseFloat(i.grand_total) || 0,
+      totalCost: parseFloat(i.total_cost) || 0,
+      profitAmount: parseFloat(i.profit_amount) || 0,
       status: i.status
     };
 

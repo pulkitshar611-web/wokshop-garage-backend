@@ -32,6 +32,10 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const dropdownOptionsRoutes = require('./routes/dropdownOptionsRoutes');
+// NEW ROUTES - Sales Returns & Vouchers
+const salesReturnRoutes = require('./routes/salesReturnRoutes');
+const voucherRoutes = require('./routes/voucherRoutes');
 
 // Initialize Express app
 const app = express();
@@ -68,6 +72,10 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/dropdown-options', dropdownOptionsRoutes);
+// NEW ROUTE REGISTRATIONS - Sales Returns & Vouchers
+app.use('/api/sales-returns', salesReturnRoutes);
+app.use('/api/vouchers', voucherRoutes); // Handles /payment-vouchers and /receipt-vouchers
 
 // 404 handler
 app.use((req, res) => {

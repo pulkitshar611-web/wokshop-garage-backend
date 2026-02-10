@@ -32,8 +32,17 @@ router.post('/:id/stock-in', auth, inventoryController.stockIn);
 // Stock Out - Deduct stock
 router.post('/:id/stock-out', auth, inventoryController.stockOut);
 
+// Get all inventory categories
+router.get('/categories/all', auth, inventoryController.getInventoryCategories);
+
+// Create new inventory category
+router.post('/categories', auth, inventoryController.createInventoryCategory);
+
 // Get stock transactions for an item
 router.get('/:id/transactions', auth, inventoryController.getStockTransactions);
+
+// Get item activity (full history)
+router.get('/:id/activity', auth, inventoryController.getItemActivity);
 
 module.exports = router;
 

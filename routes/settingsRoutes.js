@@ -17,5 +17,11 @@ router.get('/', auth, settingsController.getSettings);
 // Update settings (Admin only)
 router.put('/', auth, settingsController.updateSettings);
 
+// Get custom options (Authenticated users)
+router.get('/options', authenticate(), settingsController.getOptions);
+
+// Add custom option (Authenticated users)
+router.post('/options', authenticate(), settingsController.addOption);
+
 module.exports = router;
 

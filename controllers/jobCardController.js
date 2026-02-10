@@ -24,7 +24,7 @@ const generateJobNumber = async () => {
     // Extract number from latest job_no (e.g., "JC-001" -> 1)
     const latestJobNo = jobs[0].job_no;
     const match = latestJobNo.match(/JC-(\d+)/);
-    
+
     if (match) {
       const nextNumber = parseInt(match[1]) + 1;
       return `JC-${String(nextNumber).padStart(3, '0')}`;
@@ -47,17 +47,21 @@ const generateJobNumber = async () => {
 const getAllJobCards = async (req, res) => {
   try {
     const { status, technician, vehicleType, search } = req.query;
-    
+
     let query = `
       SELECT 
         jc.id, jc.job_no, jc.customer_id, jc.technician_id,
         jc.vehicle_type, jc.vehicle_number, jc.engine_model,
         jc.job_type, jc.job_sub_type, jc.brand, jc.pump_injector_serial,
+        jc.quantity,
         jc.status, jc.received_date, jc.expected_delivery_date,
         jc.description, jc.created_at, jc.updated_at,
+        jc.quotation_amount, jc.final_amount,
         c.name AS customer_name, c.email AS customer_email, 
         c.phone AS customer_phone, c.company AS company_name,
-        u.name AS technician_name
+        u.name AS technician_name,
+        (SELECT COALESCE(SUM(total_price), 0) FROM job_card_materials WHERE job_card_id = jc.id) AS materials_cost,
+        (SELECT COALESCE(COUNT(*), 0) FROM job_card_materials WHERE job_card_id = jc.id) AS materials_count
       FROM job_cards jc
       LEFT JOIN customers c ON jc.customer_id = c.id
       LEFT JOIN users u ON jc.technician_id = u.id
@@ -112,10 +116,15 @@ const getAllJobCards = async (req, res) => {
       pumpInjectorSerial: jc.pump_injector_serial,
       technicianId: jc.technician_id,
       technician: jc.technician_name,
+      quantity: jc.quantity,
       status: jc.status,
       receivedDate: jc.received_date ? jc.received_date.toISOString().split('T')[0] : null,
       expectedDeliveryDate: jc.expected_delivery_date ? jc.expected_delivery_date.toISOString().split('T')[0] : null,
       description: jc.description,
+      materialsCost: jc.materials_cost,
+      materialsCount: jc.materials_count,
+      quotationAmount: jc.quotation_amount,
+      finalAmount: jc.final_amount,
       createdAt: jc.created_at,
       updatedAt: jc.updated_at
     }));
@@ -147,8 +156,10 @@ const getJobCardById = async (req, res) => {
         jc.id, jc.job_no, jc.customer_id, jc.technician_id,
         jc.vehicle_type, jc.vehicle_number, jc.engine_model,
         jc.job_type, jc.job_sub_type, jc.brand, jc.pump_injector_serial,
+        jc.quantity,
         jc.status, jc.received_date, jc.expected_delivery_date,
         jc.description, jc.created_at, jc.updated_at,
+        jc.quotation_amount, jc.final_amount,
         c.name AS customer_name, c.email AS customer_email, 
         c.phone AS customer_phone, c.company AS company_name, c.address AS customer_address,
         u.name AS technician_name, u.email AS technician_email
@@ -165,6 +176,17 @@ const getJobCardById = async (req, res) => {
         error: 'Job card not found'
       });
     }
+
+    // Also fetch materials
+    const [materials] = await pool.execute(
+      `SELECT 
+        jcm.id, jcm.material_name, jcm.quantity, jcm.unit_price, jcm.total_price, jcm.inventory_item_id,
+        ii.part_code
+      FROM job_card_materials jcm
+      LEFT JOIN inventory_items ii ON jcm.inventory_item_id = ii.id
+      WHERE jcm.job_card_id = ?`,
+      [id]
+    );
 
     const jc = jobCards[0];
     const formattedJobCard = {
@@ -186,10 +208,25 @@ const getJobCardById = async (req, res) => {
       jobSubType: jc.job_sub_type,
       brand: jc.brand,
       pumpInjectorSerial: jc.pump_injector_serial,
+      quantity: jc.quantity,
       status: jc.status,
       receivedDate: jc.received_date ? jc.received_date.toISOString().split('T')[0] : null,
       expectedDeliveryDate: jc.expected_delivery_date ? jc.expected_delivery_date.toISOString().split('T')[0] : null,
       description: jc.description,
+      quotationAmount: parseFloat(jc.quotation_amount) || 0,
+      finalAmount: parseFloat(jc.final_amount) || 0,
+      labourCost: parseFloat(jc.labour_cost) || 0,
+      materialsAmount: parseFloat(jc.materials_amount) || 0,
+      materialsCost: parseFloat(jc.materials_cost) || 0,
+      materials: materials.map(m => ({
+        id: m.id,
+        materialName: m.material_name,
+        quantity: m.quantity,
+        unitPrice: m.unit_price,
+        totalPrice: m.total_price,
+        totalCost: m.total_cost,
+        partCode: m.part_code
+      })),
       createdAt: jc.created_at,
       updatedAt: jc.updated_at
     };
@@ -227,11 +264,15 @@ const createJobCard = async (req, res) => {
       jobSubType,
       brand,
       pumpInjectorSerial,
+      quantity,
       technician,
       status,
       receivedDate,
       expectedDeliveryDate,
-      description
+      description,
+      quotationAmount,
+      finalAmount,
+      labourCost
     } = req.body;
 
     // Validate required fields
@@ -283,8 +324,9 @@ const createJobCard = async (req, res) => {
       `INSERT INTO job_cards (
         job_no, customer_id, technician_id, vehicle_type, vehicle_number,
         engine_model, job_type, job_sub_type, brand, pump_injector_serial,
-        status, received_date, expected_delivery_date, description, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        quantity, status, received_date, expected_delivery_date, description,
+        quotation_amount, final_amount, labour_cost, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         jobNo,
         customerId,
@@ -296,10 +338,14 @@ const createJobCard = async (req, res) => {
         jobSubType || null,
         brand,
         pumpInjectorSerial || null,
+        quantity || 1,
         status || 'Received',
         receivedDate || new Date().toISOString().split('T')[0],
         expectedDeliveryDate || null,
-        description || null
+        description || null,
+        quotationAmount || 0,
+        finalAmount || 0,
+        labourCost || 0
       ]
     );
 
@@ -309,8 +355,9 @@ const createJobCard = async (req, res) => {
         jc.id, jc.job_no, jc.customer_id, jc.technician_id,
         jc.vehicle_type, jc.vehicle_number, jc.engine_model,
         jc.job_type, jc.job_sub_type, jc.brand, jc.pump_injector_serial,
+        jc.quantity,
         jc.status, jc.received_date, jc.expected_delivery_date,
-        jc.description, jc.created_at, jc.updated_at,
+        jc.description, jc.quotation_amount, jc.final_amount, jc.labour_cost, jc.created_at, jc.updated_at,
         c.name AS customer_name, c.phone AS customer_phone, c.company AS company_name,
         u.name AS technician_name
       FROM job_cards jc
@@ -336,10 +383,14 @@ const createJobCard = async (req, res) => {
       pumpInjectorSerial: jc.pump_injector_serial,
       technicianId: jc.technician_id,
       technician: jc.technician_name,
+      quantity: jc.quantity,
       status: jc.status,
       receivedDate: jc.received_date ? jc.received_date.toISOString().split('T')[0] : null,
       expectedDeliveryDate: jc.expected_delivery_date ? jc.expected_delivery_date.toISOString().split('T')[0] : null,
-      description: jc.description
+      description: jc.description,
+      quotationAmount: parseFloat(jc.quotation_amount) || 0,
+      finalAmount: parseFloat(jc.final_amount) || 0,
+      labourCost: parseFloat(jc.labour_cost) || 0
     };
 
     res.status(201).json({
@@ -378,12 +429,16 @@ const updateJobCard = async (req, res) => {
       status,
       receivedDate,
       expectedDeliveryDate,
-      description
+      description,
+      quantity,
+      quotationAmount,
+      finalAmount,
+      labourCost
     } = req.body;
 
     // Check if job card exists
     const [existingJobs] = await pool.execute(
-      'SELECT id, customer_id FROM job_cards WHERE id = ?',
+      'SELECT id, customer_id, status FROM job_cards WHERE id = ?',
       [id]
     );
 
@@ -416,67 +471,177 @@ const updateJobCard = async (req, res) => {
       }
     }
 
-    // Build update query
-    const updates = [];
+    // Build update query dynamically
+    let updateQuery = 'UPDATE job_cards SET';
+    const updateFields = ['updated_at = NOW()'];
     const params = [];
 
-    if (vehicleType) {
-      updates.push('vehicle_type = ?');
-      params.push(vehicleType);
-    }
-    if (vehicleNumber !== undefined) {
-      updates.push('vehicle_number = ?');
-      params.push(vehicleNumber);
-    }
-    if (engineModel !== undefined) {
-      updates.push('engine_model = ?');
-      params.push(engineModel);
-    }
-    if (jobType) {
-      updates.push('job_type = ?');
-      params.push(jobType);
-    }
-    if (jobSubType !== undefined) {
-      updates.push('job_sub_type = ?');
-      params.push(jobSubType);
-    }
-    if (brand) {
-      updates.push('brand = ?');
-      params.push(brand);
-    }
-    if (pumpInjectorSerial !== undefined) {
-      updates.push('pump_injector_serial = ?');
-      params.push(pumpInjectorSerial);
-    }
     if (technicianId !== null) {
-      updates.push('technician_id = ?');
+      updateFields.push('technician_id = ?');
       params.push(technicianId);
     }
     if (status) {
-      updates.push('status = ?');
+      updateFields.push('status = ?');
       params.push(status);
     }
+    if (vehicleType) {
+      updateFields.push('vehicle_type = ?');
+      params.push(vehicleType);
+    }
+    if (vehicleNumber !== undefined) {
+      updateFields.push('vehicle_number = ?');
+      params.push(vehicleNumber);
+    }
+    if (engineModel !== undefined) {
+      updateFields.push('engine_model = ?');
+      params.push(engineModel);
+    }
+    if (jobType) {
+      updateFields.push('job_type = ?');
+      params.push(jobType);
+    }
+    if (jobSubType !== undefined) {
+      updateFields.push('job_sub_type = ?');
+      params.push(jobSubType);
+    }
+    if (brand) {
+      updateFields.push('brand = ?');
+      params.push(brand);
+    }
+    if (pumpInjectorSerial !== undefined) {
+      updateFields.push('pump_injector_serial = ?');
+      params.push(pumpInjectorSerial);
+    }
     if (receivedDate) {
-      updates.push('received_date = ?');
+      updateFields.push('received_date = ?');
       params.push(receivedDate);
     }
     if (expectedDeliveryDate !== undefined) {
-      updates.push('expected_delivery_date = ?');
+      updateFields.push('expected_delivery_date = ?');
       params.push(expectedDeliveryDate);
     }
     if (description !== undefined) {
-      updates.push('description = ?');
+      updateFields.push('description = ?');
       params.push(description);
     }
+    if (quantity !== undefined) {
+      updateFields.push('quantity = ?');
+      params.push(quantity);
+    }
+    if (quotationAmount !== undefined) {
+      updateFields.push('quotation_amount = ?');
+      params.push(quotationAmount);
+    }
+    if (finalAmount !== undefined) {
+      updateFields.push('final_amount = ?');
+      params.push(finalAmount);
+    }
+    if (labourCost !== undefined) {
+      updateFields.push('labour_cost = ?');
+      params.push(labourCost);
+    }
+    
+    // Build the final update query
+    updateQuery = `${updateQuery} ${updateFields.join(', ')}`;
+    params.push(id);
 
-    if (updates.length > 0) {
-      updates.push('updated_at = NOW()');
-      params.push(id);
+    // Start transaction for status-based inventory deduction
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
 
-      await pool.execute(
-        `UPDATE job_cards SET ${updates.join(', ')} WHERE id = ?`,
+    try {
+      await connection.execute(
+        `${updateQuery} WHERE id = ?`,
         params
       );
+
+      // Inventory Deduction Logic: If moving to 'Under Repair'
+      if (status === 'Under Repair' && existingJob.status !== 'Under Repair') {
+        // Get all materials that are NOT yet deducted
+        const [undeductedMaterials] = await connection.execute(
+          'SELECT id, inventory_item_id, quantity FROM job_card_materials WHERE job_card_id = ? AND stock_deducted = 0',
+          [id]
+        );
+
+        for (const mat of undeductedMaterials) {
+          if (mat.inventory_item_id) {
+            // Check stock
+            const [invItems] = await connection.execute(
+              'SELECT available_stock, part_name FROM inventory_items WHERE id = ? FOR UPDATE',
+              [mat.inventory_item_id]
+            );
+
+            if (invItems.length > 0) {
+              const item = invItems[0];
+              if (item.available_stock < mat.quantity) {
+                throw new Error(`Insufficient stock for ${item.part_name}. Available: ${item.available_stock}, needed: ${mat.quantity}`);
+              }
+
+              // Deduct stock
+              await connection.execute(
+                'UPDATE inventory_items SET available_stock = available_stock - ? WHERE id = ?',
+                [mat.quantity, mat.inventory_item_id]
+              );
+
+              // Mark material as deducted
+              await connection.execute(
+                'UPDATE job_card_materials SET stock_deducted = 1 WHERE id = ?',
+                [mat.id]
+              );
+
+              // Get some details for logging
+              const [details] = await connection.execute(
+                `SELECT jc.job_no, c.name FROM job_cards jc 
+                 JOIN customers c ON jc.customer_id = c.id 
+                 WHERE jc.id = ?`,
+                [id]
+              );
+              const jobNo = details[0]?.job_no || 'N/A';
+              const customerName = details[0]?.name || 'N/A';
+
+              // Get material prices for activity log
+              const [matPrices] = await connection.execute(
+                'SELECT unit_price, unit_cost FROM job_card_materials WHERE id = ?',
+                [mat.id]
+              );
+              const unitPrice = matPrices[0]?.unit_price || 0;
+
+              // Record in stock_transactions
+              await connection.execute(
+                `INSERT INTO stock_transactions (
+                  inventory_item_id, transaction_type, quantity, reference_no, notes, created_at
+                ) VALUES (?, 'Stock Out', ?, ?, ?, NOW())`,
+                [mat.inventory_item_id, mat.quantity, jobNo, `Used in Job Card ${jobNo}`]
+              );
+
+              // Record in item_activity
+              await connection.execute(
+                `INSERT INTO item_activity (
+                  inventory_item_id, activity_type, activity_date, quantity, 
+                  unit_price, total_price, reference_type, reference_no, customer_name, notes, created_at
+                ) VALUES (?, 'Job Usage', CURDATE(), ?, ?, ?, 'Job Card', ?, ?, ?, NOW())`,
+                [
+                  mat.inventory_item_id,
+                  mat.quantity,
+                  unitPrice,
+                  mat.quantity * unitPrice,
+                  'Job Card',
+                  jobNo,
+                  customerName,
+                  `Used in Job Card ${jobNo}`
+                ]
+              );
+            }
+          }
+        }
+      }
+
+      await connection.commit();
+    } catch (txnError) {
+      await connection.rollback();
+      throw txnError;
+    } finally {
+      connection.release();
     }
 
     // Fetch updated job card
@@ -485,10 +650,14 @@ const updateJobCard = async (req, res) => {
         jc.id, jc.job_no, jc.customer_id, jc.technician_id,
         jc.vehicle_type, jc.vehicle_number, jc.engine_model,
         jc.job_type, jc.job_sub_type, jc.brand, jc.pump_injector_serial,
+        jc.quantity,
         jc.status, jc.received_date, jc.expected_delivery_date,
         jc.description, jc.created_at, jc.updated_at,
+        jc.quotation_amount, jc.final_amount,
         c.name AS customer_name, c.phone AS customer_phone, c.company AS company_name,
-        u.name AS technician_name
+        u.name AS technician_name,
+        (SELECT COALESCE(SUM(total_price), 0) FROM job_card_materials WHERE job_card_id = jc.id) AS materials_cost,
+        (SELECT COALESCE(COUNT(*), 0) FROM job_card_materials WHERE job_card_id = jc.id) AS materials_count
       FROM job_cards jc
       LEFT JOIN customers c ON jc.customer_id = c.id
       LEFT JOIN users u ON jc.technician_id = u.id
@@ -512,10 +681,15 @@ const updateJobCard = async (req, res) => {
       pumpInjectorSerial: jc.pump_injector_serial,
       technicianId: jc.technician_id,
       technician: jc.technician_name,
+      quantity: jc.quantity,
       status: jc.status,
       receivedDate: jc.received_date ? jc.received_date.toISOString().split('T')[0] : null,
       expectedDeliveryDate: jc.expected_delivery_date ? jc.expected_delivery_date.toISOString().split('T')[0] : null,
-      description: jc.description
+      description: jc.description,
+      materialsCost: jc.materials_cost,
+      materialsCount: jc.materials_count,
+      quotationAmount: jc.quotation_amount,
+      finalAmount: jc.final_amount
     };
 
     res.json({

@@ -198,6 +198,63 @@ const updateSettings = async (req, res) => {
 
 module.exports = {
   getSettings,
-  updateSettings
+  updateSettings,
+  getOptions: async (req, res) => {
+    try {
+      const { category, field } = req.query;
+      let query = 'SELECT DISTINCT option_value FROM dropdown_options WHERE 1=1';
+      const params = [];
+
+      if (category) {
+        query += ' AND category_type = ?';
+        params.push(category);
+      }
+
+      if (field) {
+        query += ' AND field_key = ?';
+        params.push(field);
+      }
+
+      query += ' ORDER BY option_value';
+
+      const [rows] = await pool.execute(query, params);
+
+      res.json({
+        success: true,
+        data: rows.map(r => r.option_value)
+      });
+    } catch (error) {
+      console.error('Get options error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch options' });
+    }
+  },
+
+  addOption: async (req, res) => {
+    try {
+      const { category, field, value } = req.body;
+
+      if (!category || !field || !value) {
+        return res.status(400).json({ success: false, error: 'Missing required fields' });
+      }
+
+      // Check if exists
+      const [existing] = await pool.execute(
+        'SELECT id FROM dropdown_options WHERE category_type = ? AND field_key = ? AND option_value = ?',
+        [category, field, value]
+      );
+
+      if (existing.length === 0) {
+        await pool.execute(
+          'INSERT INTO dropdown_options (category_type, field_key, option_value) VALUES (?, ?, ?)',
+          [category, field, value]
+        );
+      }
+
+      res.json({ success: true, message: 'Option added successfully' });
+    } catch (error) {
+      console.error('Add option error:', error);
+      res.status(500).json({ success: false, error: 'Failed to add option' });
+    }
+  }
 };
 

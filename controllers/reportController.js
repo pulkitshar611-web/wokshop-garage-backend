@@ -24,6 +24,15 @@ const generateReport = async (req, res) => {
       case 'monthly-sales':
         reportData = await getMonthlySalesReport(startDate, endDate);
         break;
+      case 'daily-bill-profit':
+        reportData = await getBillProfitReport(startDate, endDate, 'daily');
+        break;
+      case 'monthly-bill-profit':
+        reportData = await getBillProfitReport(startDate, endDate, 'monthly');
+        break;
+      case 'yearly-bill-profit':
+        reportData = await getBillProfitReport(startDate, endDate, 'yearly');
+        break;
       case 'job-history-customer':
         reportData = await getJobHistoryByCustomer(customerId);
         break;
@@ -65,7 +74,7 @@ const generateReport = async (req, res) => {
  */
 const getDailySalesReport = async (startDate, endDate) => {
   const dateFilter = buildDateFilter(startDate, endDate, 'i.created_at');
-  
+
   const [results] = await pool.execute(
     `SELECT 
       DATE(i.created_at) AS sale_date,
@@ -103,7 +112,7 @@ const getDailySalesReport = async (startDate, endDate) => {
  */
 const getMonthlySalesReport = async (startDate, endDate) => {
   const dateFilter = buildDateFilter(startDate, endDate, 'i.created_at');
-  
+
   const [results] = await pool.execute(
     `SELECT 
       DATE_FORMAT(i.created_at, '%Y-%m') AS sale_month,
@@ -222,7 +231,7 @@ const getJobHistoryBySerialNumber = async (serialNumber) => {
  */
 const getLabourProfitReport = async (startDate, endDate) => {
   const dateFilter = buildDateFilter(startDate, endDate, 'i.created_at');
-  
+
   const [results] = await pool.execute(
     `SELECT 
       DATE(i.created_at) AS invoice_date,
@@ -258,7 +267,7 @@ const getLabourProfitReport = async (startDate, endDate) => {
  */
 const getPartsProfitReport = async (startDate, endDate) => {
   const dateFilter = buildDateFilter(startDate, endDate, 'i.created_at');
-  
+
   const [results] = await pool.execute(
     `SELECT 
       DATE(i.created_at) AS invoice_date,
@@ -316,6 +325,59 @@ const getWarrantyTrackingReport = async () => {
       serialNumber: r.pump_injector_serial,
       receivedDate: r.received_date ? r.received_date.toISOString().split('T')[0] : null,
       status: r.status
+    }))
+  };
+};
+
+/**
+ * Bill Profit Report (Daily, Monthly, Yearly)
+ */
+const getBillProfitReport = async (startDate, endDate, period) => {
+  const dateFilter = buildDateFilter(startDate, endDate, 'i.created_at');
+
+  let groupBy = '';
+  let dateFormat = '';
+
+  if (period === 'daily') {
+    groupBy = 'DATE(i.created_at)';
+    dateFormat = 'DATE(i.created_at)';
+  } else if (period === 'monthly') {
+    groupBy = "DATE_FORMAT(i.created_at, '%Y-%m')";
+    dateFormat = "DATE_FORMAT(i.created_at, '%Y-%m')";
+  } else if (period === 'yearly') {
+    groupBy = 'YEAR(i.created_at)';
+    dateFormat = 'YEAR(i.created_at)';
+  }
+
+  const [results] = await pool.execute(
+    `SELECT 
+      ${dateFormat} AS group_date,
+      COUNT(i.id) AS total_invoices,
+      SUM(i.grand_total) AS total_sales,
+      SUM(i.total_cost) AS total_cost,
+      SUM(i.profit_amount) AS net_profit
+    FROM invoices i
+    ${dateFilter.where}
+    GROUP BY ${groupBy}
+    ORDER BY group_date DESC`,
+    dateFilter.params
+  );
+
+  return {
+    title: `${period.charAt(0).toUpperCase() + period.slice(1)} Bill Profit Report`,
+    period: { startDate, endDate },
+    summary: {
+      totalInvoices: results.reduce((sum, r) => sum + (r.total_invoices || 0), 0),
+      totalSales: results.reduce((sum, r) => sum + (parseFloat(r.total_sales) || 0), 0),
+      totalCost: results.reduce((sum, r) => sum + (parseFloat(r.total_cost) || 0), 0),
+      netProfit: results.reduce((sum, r) => sum + (parseFloat(r.net_profit) || 0), 0)
+    },
+    data: results.map(r => ({
+      date: r.group_date instanceof Date ? r.group_date.toISOString().split('T')[0] : r.group_date,
+      totalInvoices: r.total_invoices,
+      totalSales: parseFloat(r.total_sales) || 0,
+      totalCost: parseFloat(r.total_cost) || 0,
+      netProfit: parseFloat(r.net_profit) || 0
     }))
   };
 };
