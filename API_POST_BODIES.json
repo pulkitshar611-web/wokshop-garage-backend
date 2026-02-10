@@ -1,0 +1,251 @@
+{
+  "authentication": {
+    "login": {
+      "method": "POST",
+      "url": "/api/auth/login",
+      "body": {
+        "email": "admin@workshop.com",
+        "password": "password123"
+      }
+    }
+  },
+  "users": {
+    "create": {
+      "method": "POST",
+      "url": "/api/users",
+      "body": {
+        "name": "Raj Kumar",
+        "email": "raj@workshop.com",
+        "phone": "+91 98765 43210",
+        "role": "technician",
+        "login_access": true,
+        "password": "password123"
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/users/:id",
+      "body": {
+        "name": "Raj Kumar Updated",
+        "phone": "+91 98765 43211",
+        "login_access": true
+      }
+    }
+  },
+  "customers": {
+    "create": {
+      "method": "POST",
+      "url": "/api/customers",
+      "body": {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "phone": "+91 98765 43213",
+        "company": "Doe Transport",
+        "address": "123 Business Street, Mumbai"
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/customers/:id",
+      "body": {
+        "name": "John Doe Updated",
+        "phone": "+91 98765 43214",
+        "address": "456 New Street, Mumbai"
+      }
+    }
+  },
+  "jobCards": {
+    "create": {
+      "method": "POST",
+      "url": "/api/job-cards",
+      "body": {
+        "customerName": "Rajesh Kumar",
+        "customerPhone": "+91 98765 43210",
+        "companyName": "Kumar Transport",
+        "vehicleType": "Truck",
+        "vehicleNumber": "MH-01-AB-1234",
+        "engineModel": "Cummins ISX",
+        "jobType": "Injector",
+        "jobSubType": "CRDI",
+        "brand": "BOSCH",
+        "pumpInjectorSerial": "BOSCH-12345",
+        "technician": "Raj",
+        "status": "Received",
+        "receivedDate": "2025-01-15",
+        "expectedDeliveryDate": "2025-01-20",
+        "description": "Injector cleaning and calibration"
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/job-cards/:id",
+      "body": {
+        "status": "Under Repair",
+        "technician": "Amit",
+        "description": "Updated description"
+      }
+    }
+  },
+  "testingRecords": {
+    "create": {
+      "method": "POST",
+      "url": "/api/testing-records",
+      "body": {
+        "jobCardNumber": "JC-001",
+        "customerName": "Rajesh Kumar",
+        "jobType": "Injector - CRDI",
+        "brand": "BOSCH",
+        "beforeRepair": {
+          "pressure": "1200",
+          "leak": "5",
+          "calibration": "95",
+          "passFail": "Fail"
+        },
+        "afterRepair": {
+          "pressure": "1500",
+          "leak": "2",
+          "calibration": "98",
+          "passFail": "Pass"
+        },
+        "injectorParams": {
+          "pilotInjection": "2.5",
+          "mainInjection": "15.0",
+          "returnFlow": "50",
+          "pressure": "1500",
+          "leakTest": "Pass"
+        },
+        "testDate": "2025-01-15"
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/testing-records/:id",
+      "body": {
+        "afterRepair": {
+          "pressure": "1600",
+          "leak": "1",
+          "calibration": "99",
+          "passFail": "Pass"
+        }
+      }
+    }
+  },
+  "inventory": {
+    "create": {
+      "method": "POST",
+      "url": "/api/inventory",
+      "body": {
+        "partName": "Control Valve",
+        "partCode": "CV-001",
+        "category": "Control Valve",
+        "supplier": "BOSCH India",
+        "availableStock": 20,
+        "minStockLevel": 10
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/inventory/:id",
+      "body": {
+        "availableStock": 15,
+        "minStockLevel": 12
+      }
+    },
+    "stockIn": {
+      "method": "POST",
+      "url": "/api/inventory/:id/stock-in",
+      "body": {
+        "quantity": 10,
+        "notes": "New stock received from supplier"
+      }
+    },
+    "stockOut": {
+      "method": "POST",
+      "url": "/api/inventory/:id/stock-out",
+      "body": {
+        "quantity": 5,
+        "notes": "Used for job card JC-001"
+      }
+    }
+  },
+  "quotations": {
+    "create": {
+      "method": "POST",
+      "url": "/api/quotations",
+      "body": {
+        "jobCard": "JC-001",
+        "customerName": "Rajesh Kumar",
+        "labourCharges": 5000,
+        "partsCharges": 3000,
+        "vatPercentage": 18,
+        "validUntil": "2025-02-15",
+        "status": "Draft"
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/quotations/:id",
+      "body": {
+        "labourCharges": 6000,
+        "partsCharges": 4000,
+        "status": "Sent"
+      }
+    }
+  },
+  "invoices": {
+    "createFromQuotation": {
+      "method": "POST",
+      "url": "/api/invoices",
+      "body": {
+        "quotation": "QT-001",
+        "status": "Unpaid"
+      }
+    },
+    "createFromJobCard": {
+      "method": "POST",
+      "url": "/api/invoices",
+      "body": {
+        "jobCard": "JC-001",
+        "customerName": "Rajesh Kumar",
+        "labourAmount": 5000,
+        "partsAmount": 3000,
+        "vatPercentage": 18,
+        "status": "Unpaid"
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/invoices/:id",
+      "body": {
+        "labourAmount": 6000,  
+        "partsAmount": 4000,
+        "vatPercentage": 18,
+        "status": "Partially Paid"
+      }
+    }
+  },
+  "payments": {
+    "create": {
+      "method": "POST",
+      "url": "/api/payments",
+      "body": {
+        "invoice": "INV-001",
+        "customerName": "Rajesh Kumar",
+        "invoiceAmount": 9440,
+        "amountPaid": 5000,
+        "balanceAmount": 4440,
+        "paymentMode": "Cash",
+        "paymentDate": "2025-01-15"
+      }
+    },
+    "update": {
+      "method": "PUT",
+      "url": "/api/payments/:id",
+      "body": {
+        "amountPaid": 6000,
+        "paymentMode": "Bank Transfer"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,106 @@
+{
+  "endpoint": "POST {{base_url}}/api/invoices",
+  "description": "Create Invoice from Job Card",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <your_token>"
+  },
+  "examples": {
+    "createFromJobCard": {
+      "description": "Create invoice directly from job card",
+      "body": {
+        "jobCard": "JC-001",
+        "customerName": "Rajesh Kumar",
+        "labourAmount": 5000,
+        "partsAmount": 3000,
+        "vatPercentage": 18,
+        "status": "Unpaid"
+      }
+    },
+    "createFromJobCardMinimal": {
+      "description": "Minimal payload - only job card required",
+      "body": {
+        "jobCard": "JC-001"
+      }
+    },
+    "createFromJobCardWithAllFields": {
+      "description": "Complete payload with all fields",
+      "body": {
+        "jobCard": "JC-001",
+        "customerName": "Rajesh Kumar",
+        "labourAmount": 5000,
+        "partsAmount": 3000,
+        "vatPercentage": 18,
+        "status": "Unpaid"
+      }
+    },
+    "createFromQuotation": {
+      "description": "Create invoice from quotation",
+      "body": {
+        "quotation": "QT-001",
+        "status": "Unpaid"
+      }
+    }
+  },
+  "fieldDescriptions": {
+    "quotation": {
+      "type": "string (optional)",
+      "description": "Quotation number (e.g., 'QT-001'). If provided, invoice will be created from quotation data.",
+      "example": "QT-001"
+    },
+    "jobCard": {
+      "type": "string (required if no quotation)",
+      "description": "Job card number (e.g., 'JC-001'). Required if quotation is not provided.",
+      "example": "JC-001"
+    },
+    "customerName": {
+      "type": "string (optional)",
+      "description": "Customer name for reference",
+      "example": "Rajesh Kumar"
+    },
+    "labourAmount": {
+      "type": "number (optional)",
+      "description": "Labour charges amount. Defaults to 0 if not provided.",
+      "example": 5000
+    },
+    "partsAmount": {
+      "type": "number (optional)",
+      "description": "Parts charges amount. Defaults to 0 if not provided.",
+      "example": 3000
+    },
+    "vatPercentage": {
+      "type": "number (optional)",
+      "description": "VAT percentage. Defaults to 0 if not provided.",
+      "example": 18
+    },
+    "status": {
+      "type": "string (optional)",
+      "description": "Invoice status. Options: 'Unpaid', 'Partially Paid', 'Paid'. Defaults to 'Unpaid'.",
+      "example": "Unpaid",
+      "enum": ["Unpaid", "Partially Paid", "Paid"]
+    }
+  },
+  "response": {
+    "success": true,
+    "message": "Invoice created successfully",
+    "data": {
+      "id": 1,
+      "invoiceNo": "INV-001",
+      "jobCard": "JC-001",
+      "customerName": "Rajesh Kumar",
+      "labourAmount": 5000,
+      "partsAmount": 3000,
+      "vatPercentage": 18,
+      "grandTotal": 9440,
+      "status": "Unpaid"
+    }
+  },
+  "notes": [
+    "Either 'quotation' OR 'jobCard' must be provided",
+    "If 'quotation' is provided, invoice data will be taken from quotation",
+    "If 'jobCard' is provided, you can override amounts manually",
+    "Grand total is auto-calculated: (labourAmount + partsAmount) + VAT",
+    "Invoice number is auto-generated (INV-001, INV-002, etc.)"
+  ]
+}
+

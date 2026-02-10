@@ -1,0 +1,2053 @@
+{
+	"info": {
+		"_postman_id": "workshop-management-api",
+		"name": "Workshop Management API",
+		"description": "Complete API collection for Workshop Management System\n\n**Setup Instructions:**\n1. Set the `base_url` variable to your API URL (default: http://localhost:8000)\n2. Run the 'Login - Admin' request first to get the auth token\n3. The token will be automatically saved to the `auth_token` variable\n4. All other requests will use this token automatically",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login - Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.collectionVariables.set('auth_token', jsonData.token);",
+									"        console.log('Token saved:', jsonData.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@workshop.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with admin credentials. Token will be automatically saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Technician",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"tech@workshop.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with technician credentials"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Storekeeper",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"store@workshop.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with storekeeper credentials"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints"
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users?role=admin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "role",
+									"value": "admin",
+									"description": "Optional: Filter by role (admin, technician, storekeeper)"
+								}
+							]
+						},
+						"description": "Get all users. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Get user by ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Raj Kumar\",\n  \"email\": \"raj@workshop.com\",\n  \"phone\": \"+91 98765 43210\",\n  \"role\": \"technician\",\n  \"login_access\": true,\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Create a new user. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Raj Kumar Updated\",\n  \"phone\": \"+91 98765 43211\",\n  \"login_access\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"2"
+							]
+						},
+						"description": "Update user. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"2"
+							]
+						},
+						"description": "Delete user. Admin only. Cannot delete your own account."
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints (Admin only)"
+		},
+		{
+			"name": "Customers",
+			"item": [
+				{
+					"name": "Get All Customers",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customers?search=rajesh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "rajesh",
+									"description": "Optional: Search by name, email, phone, or company"
+								}
+							]
+						},
+						"description": "Get all customers. Admin and Storekeeper can access."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"1"
+							]
+						},
+						"description": "Get customer by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Customer",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+91 98765 43213\",\n  \"company\": \"Doe Transport\",\n  \"address\": \"123 Business Street, Mumbai\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							]
+						},
+						"description": "Create a new customer"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Customer",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe Updated\",\n  \"phone\": \"+91 98765 43214\",\n  \"address\": \"456 New Street, Mumbai\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"1"
+							]
+						},
+						"description": "Update customer"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Customer",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"1"
+							]
+						},
+						"description": "Delete customer. Cannot delete if customer has job cards."
+					},
+					"response": []
+				}
+			],
+			"description": "Customer management endpoints (Admin and Storekeeper)"
+		},
+		{
+			"name": "Job Cards",
+			"item": [
+				{
+					"name": "Get All Job Cards",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/job-cards?status=Received&technician=Raj&vehicleType=Truck",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"job-cards"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "Received",
+									"description": "Filter by status: Received, Under Repair, Testing, Completed, Delivered"
+								},
+								{
+									"key": "technician",
+									"value": "Raj",
+									"description": "Filter by technician name"
+								},
+								{
+									"key": "vehicleType",
+									"value": "Truck",
+									"description": "Filter by vehicle type: Truck, Excavator, Generator, Other"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by job number, customer name, phone, or vehicle number"
+								}
+							]
+						},
+						"description": "Get all job cards with optional filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Job Card by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/job-cards/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"job-cards",
+								"1"
+							]
+						},
+						"description": "Get job card by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Job Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"Rajesh Kumar\",\n  \"customerPhone\": \"+91 98765 43210\",\n  \"companyName\": \"Kumar Transport\",\n  \"vehicleType\": \"Truck\",\n  \"vehicleNumber\": \"MH-01-AB-1234\",\n  \"engineModel\": \"Cummins ISX\",\n  \"jobType\": \"Injector\",\n  \"jobSubType\": \"CRDI\",\n  \"brand\": \"BOSCH\",\n  \"pumpInjectorSerial\": \"BOSCH-12345\",\n  \"technician\": \"Raj\",\n  \"status\": \"Received\",\n  \"receivedDate\": \"2025-01-15\",\n  \"expectedDeliveryDate\": \"2025-01-20\",\n  \"description\": \"Injector cleaning and calibration\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/job-cards",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"job-cards"
+							]
+						},
+						"description": "Create a new job card. Job number (JC-001, JC-002, etc.) will be auto-generated."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Job Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Under Repair\",\n  \"technician\": \"Amit\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/job-cards/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"job-cards",
+								"1"
+							]
+						},
+						"description": "Update job card"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Job Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/job-cards/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"job-cards",
+								"1"
+							]
+						},
+						"description": "Delete job card. Cannot delete if it has testing records."
+					},
+					"response": []
+				}
+			],
+			"description": "Job card management endpoints"
+		},
+		{
+			"name": "Testing Records",
+			"item": [
+				{
+					"name": "Get All Testing Records",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/testing-records",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"testing-records"
+							]
+						},
+						"description": "Get all testing records"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Testing Record by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/testing-records/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"testing-records",
+								"1"
+							]
+						},
+						"description": "Get testing record by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Testing Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jobCardNumber\": \"JC-001\",\n  \"customerName\": \"Rajesh Kumar\",\n  \"jobType\": \"Injector - CRDI\",\n  \"brand\": \"BOSCH\",\n  \"beforeRepair\": {\n    \"pressure\": \"1200\",\n    \"leak\": \"5\",\n    \"calibration\": \"95\",\n    \"passFail\": \"Fail\"\n  },\n  \"afterRepair\": {\n    \"pressure\": \"1500\",\n    \"leak\": \"2\",\n    \"calibration\": \"98\",\n    \"passFail\": \"Pass\"\n  },\n  \"injectorParams\": {\n    \"pilotInjection\": \"2.5\",\n    \"mainInjection\": \"15.0\",\n    \"returnFlow\": \"50\",\n    \"pressure\": \"1500\",\n    \"leakTest\": \"Pass\"\n  },\n  \"testDate\": \"2025-01-15\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/testing-records",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"testing-records"
+							]
+						},
+						"description": "Create a new testing record"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Testing Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"afterRepair\": {\n    \"pressure\": \"1600\",\n    \"leak\": \"1\",\n    \"calibration\": \"99\",\n    \"passFail\": \"Pass\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/testing-records/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"testing-records",
+								"1"
+							]
+						},
+						"description": "Update testing record"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Testing Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/testing-records/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"testing-records",
+								"1"
+							]
+						},
+						"description": "Delete testing record"
+					},
+					"response": []
+				}
+			],
+			"description": "Testing record management endpoints"
+		},
+		{
+			"name": "Inventory",
+			"item": [
+				{
+					"name": "Get All Inventory Items",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inventory?category=Plunger&status=Low&search=plunger",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "Plunger",
+									"description": "Filter by category"
+								},
+								{
+									"key": "status",
+									"value": "Low",
+									"description": "Filter by status: OK, Low"
+								},
+								{
+									"key": "search",
+									"value": "plunger",
+									"description": "Search by part name, code, or supplier"
+								}
+							]
+						},
+						"description": "Get all inventory items. Admin and Storekeeper can access."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Inventory Item by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inventory/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"1"
+							]
+						},
+						"description": "Get inventory item by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Inventory Item",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"partName\": \"Control Valve\",\n  \"partCode\": \"CV-001\",\n  \"category\": \"Control Valve\",\n  \"supplier\": \"BOSCH India\",\n  \"availableStock\": 20,\n  \"minStockLevel\": 10\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory"
+							]
+						},
+						"description": "Create a new inventory item"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Inventory Item",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"availableStock\": 15,\n  \"minStockLevel\": 12\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"1"
+							]
+						},
+						"description": "Update inventory item"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Inventory Item",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inventory/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"1"
+							]
+						},
+						"description": "Delete inventory item"
+					},
+					"response": []
+				},
+				{
+					"name": "Stock In - Add Stock",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 10,\n  \"notes\": \"New stock received from supplier\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory/1/stock-in",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"1",
+								"stock-in"
+							]
+						},
+						"description": "Add stock to inventory item. Updates available stock and creates transaction record."
+					},
+					"response": []
+				},
+				{
+					"name": "Stock Out - Deduct Stock",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 5,\n  \"notes\": \"Used for job card JC-001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory/1/stock-out",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"1",
+								"stock-out"
+							]
+						},
+						"description": "Deduct stock from inventory item. Validates sufficient stock available. Updates available stock and creates transaction record."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stock Transactions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inventory/1/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"1",
+								"transactions"
+							]
+						},
+						"description": "Get all stock transactions (stock in/out history) for a specific inventory item"
+					},
+					"response": []
+				}
+			],
+			"description": "Inventory management endpoints (Admin and Storekeeper)"
+		},
+		{
+			"name": "Quotations",
+			"item": [
+				{
+					"name": "Get All Quotations",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/quotations?status=Draft",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"quotations"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "Draft",
+									"description": "Filter by status: Draft, Sent, Approved, Rejected"
+								}
+							]
+						},
+						"description": "Get all quotations. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Quotation by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/quotations/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"quotations",
+								"1"
+							]
+						},
+						"description": "Get quotation by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Quotation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jobCard\": \"JC-001\",\n  \"customerName\": \"Rajesh Kumar\",\n  \"labourCharges\": 5000,\n  \"partsCharges\": 3000,\n  \"vatPercentage\": 18,\n  \"validUntil\": \"2025-02-15\",\n  \"status\": \"Draft\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/quotations",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"quotations"
+							]
+						},
+						"description": "Create a new quotation. Quotation number (QT-001, QT-002, etc.) will be auto-generated. Total amount is calculated automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Quotation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"labourCharges\": 6000,\n  \"partsCharges\": 4000,\n  \"status\": \"Sent\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/quotations/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"quotations",
+								"1"
+							]
+						},
+						"description": "Update quotation. Total amount will be recalculated automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Quotation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/quotations/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"quotations",
+								"1"
+							]
+						},
+						"description": "Delete quotation. Cannot delete if it has been converted to invoice."
+					},
+					"response": []
+				}
+			],
+			"description": "Quotation management endpoints (Admin only)"
+		},
+		{
+			"name": "Invoices",
+			"item": [
+				{
+					"name": "Get All Invoices",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/invoices?status=Unpaid",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "Unpaid",
+									"description": "Filter by status: Paid, Partially Paid, Unpaid"
+								}
+							]
+						},
+						"description": "Get all invoices. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/invoices/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1"
+							]
+						},
+						"description": "Get invoice by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Invoice from Quotation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quotation\": \"QT-001\",\n  \"status\": \"Unpaid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						},
+						"description": "Create invoice from quotation. Invoice number (INV-001, INV-002, etc.) will be auto-generated."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Invoice from Job Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jobCard\": \"JC-001\",\n  \"customerName\": \"Rajesh Kumar\",\n  \"labourAmount\": 5000,\n  \"partsAmount\": 3000,\n  \"vatPercentage\": 18,\n  \"status\": \"Unpaid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						},
+						"description": "Create invoice directly from job card"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Invoice",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"labourAmount\": 6000,\n  \"partsAmount\": 4000,\n  \"status\": \"Partially Paid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1"
+							]
+						},
+						"description": "Update invoice. Grand total will be recalculated automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Invoice",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/invoices/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1"
+							]
+						},
+						"description": "Delete invoice. Cannot delete if it has payments."
+					},
+					"response": []
+				}
+			],
+			"description": "Invoice management endpoints (Admin only)"
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Get All Payments",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/payments?paymentMode=Cash",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments"
+							],
+							"query": [
+								{
+									"key": "paymentMode",
+									"value": "Cash",
+									"description": "Filter by payment mode: Cash, Bank Transfer, Credit"
+								}
+							]
+						},
+						"description": "Get all payments. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/payments/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"1"
+							]
+						},
+						"description": "Get payment by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Record Payment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoice\": \"INV-001\",\n  \"customerName\": \"Rajesh Kumar\",\n  \"invoiceAmount\": 9440,\n  \"amountPaid\": 5000,\n  \"balanceAmount\": 4440,\n  \"paymentMode\": \"Cash\",\n  \"paymentDate\": \"2025-01-15\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments"
+							]
+						},
+						"description": "Record a payment. Payment number (PAY-001, PAY-002, etc.) will be auto-generated. Invoice status will be updated automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amountPaid\": 6000,\n  \"paymentMode\": \"Bank Transfer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"1"
+							]
+						},
+						"description": "Update payment. Invoice status will be recalculated automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Payment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/payments/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"1"
+							]
+						},
+						"description": "Delete payment. Invoice status will be recalculated automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Statistics",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/payments/stats/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"stats",
+								"summary"
+							]
+						},
+						"description": "Get payment statistics: total payments, pending payments, credit customers count"
+					},
+					"response": []
+				}
+			],
+			"description": "Payment management endpoints (Admin only)"
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Daily Sales Report",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/daily-sales?startDate=2025-01-01&endDate=2025-01-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"daily-sales"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01",
+									"description": "Start date (YYYY-MM-DD)"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-01-31",
+									"description": "End date (YYYY-MM-DD)"
+								}
+							]
+						},
+						"description": "Generate daily sales report"
+					},
+					"response": []
+				},
+				{
+					"name": "Monthly Sales Report",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/monthly-sales?startDate=2025-01-01&endDate=2025-12-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"monthly-sales"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-12-31"
+								}
+							]
+						},
+						"description": "Generate monthly sales report"
+					},
+					"response": []
+				},
+				{
+					"name": "Job History by Customer",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/job-history-customer?customerId=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"job-history-customer"
+							],
+							"query": [
+								{
+									"key": "customerId",
+									"value": "1",
+									"description": "Customer ID (required)"
+								}
+							]
+						},
+						"description": "Get job history for a specific customer"
+					},
+					"response": []
+				},
+				{
+					"name": "Job History by Serial Number",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/job-history-serial?serialNumber=BOSCH-12345",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"job-history-serial"
+							],
+							"query": [
+								{
+									"key": "serialNumber",
+									"value": "BOSCH-12345",
+									"description": "Serial number (required)"
+								}
+							]
+						},
+						"description": "Get job history for a specific serial number"
+					},
+					"response": []
+				},
+				{
+					"name": "Labour Profit Report",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/labour-profit?startDate=2025-01-01&endDate=2025-01-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"labour-profit"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-01-31"
+								}
+							]
+						},
+						"description": "Generate labour profit report"
+					},
+					"response": []
+				},
+				{
+					"name": "Parts Profit Report",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/parts-profit?startDate=2025-01-01&endDate=2025-01-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"parts-profit"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-01-31"
+								}
+							]
+						},
+						"description": "Generate parts profit report"
+					},
+					"response": []
+				},
+				{
+					"name": "Warranty Tracking Report",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/warranty-tracking",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"warranty-tracking"
+							]
+						},
+						"description": "Generate warranty tracking report"
+					},
+					"response": []
+				}
+			],
+			"description": "Report generation endpoints"
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				},
+				"description": "Health check endpoint - no authentication required"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+
