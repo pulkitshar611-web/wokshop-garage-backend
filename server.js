@@ -48,7 +48,8 @@ app.use(
   cors({
     origin: [
       "https://garagemanage.kiaantechnology.com",
-      "http://localhost:3000"
+      "http://localhost:3000",
+      "https://arkanmotors.co.in"
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
