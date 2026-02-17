@@ -43,25 +43,9 @@ const app = express();
 const PORT = process.env.PORT === '3000' || !process.env.PORT ? 8000 : process.env.PORT;
 
 // Middleware
-// Middleware - CORS Fix
-app.use(
-  cors({
-    origin: [
-      "https://garagemanage.kiaantechnology.com",
-      "http://localhost:3000",
-      "https://arkanmotors.co.in"
-
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
-  })
-);
-
-app.options("*", cors());
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors()); // Enable CORS for frontend
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
