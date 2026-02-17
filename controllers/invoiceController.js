@@ -49,7 +49,7 @@ const getAllInvoices = async (req, res) => {
         i.vat_percentage, i.grand_total, i.total_cost, i.profit_amount,
         i.status, i.created_at, i.updated_at,
         jc.job_no,
-        c.name AS customer_name
+        c.name AS customer_name, c.phone AS customer_phone, c.id AS customer_id
       FROM invoices i
       LEFT JOIN job_cards jc ON i.job_card_id = jc.id
       LEFT JOIN customers c ON jc.customer_id = c.id
@@ -73,6 +73,8 @@ const getAllInvoices = async (req, res) => {
         jobCard: i.job_no,
         jobCardId: i.job_card_id,
         customerName: i.customer_name,
+        customerPhone: i.customer_phone,
+        customerId: i.customer_id,
         labourAmount: parseFloat(i.labour_amount) || 0,
         partsAmount: parseFloat(i.parts_amount) || 0,
         vatPercentage: parseFloat(i.vat_percentage) || 0,
@@ -303,7 +305,7 @@ const createInvoice = async (req, res) => {
         i.total_cost, i.profit_amount,
         i.status, i.created_at, i.updated_at,
         jc.job_no,
-        c.name AS customer_name
+        c.name AS customer_name, c.phone AS customer_phone, c.id AS customer_id
       FROM invoices i
       LEFT JOIN job_cards jc ON i.job_card_id = jc.id
       LEFT JOIN customers c ON jc.customer_id = c.id
@@ -318,6 +320,8 @@ const createInvoice = async (req, res) => {
       jobCard: i.job_no,
       jobCardId: i.job_card_id,
       customerName: i.customer_name,
+      customerPhone: i.customer_phone,
+      customerId: i.customer_id,
       labourAmount: parseFloat(i.labour_amount) || 0,
       partsAmount: parseFloat(i.parts_amount) || 0,
       vatPercentage: parseFloat(i.vat_percentage) || 0,
@@ -412,7 +416,7 @@ const updateInvoice = async (req, res) => {
         i.labour_amount, i.parts_amount, i.vat_percentage, i.grand_total,
         i.status, i.created_at, i.updated_at,
         jc.job_no,
-        c.name AS customer_name
+        c.name AS customer_name, c.phone AS customer_phone
       FROM invoices i
       LEFT JOIN job_cards jc ON i.job_card_id = jc.id
       LEFT JOIN customers c ON jc.customer_id = c.id
@@ -426,6 +430,7 @@ const updateInvoice = async (req, res) => {
       invoiceNo: i.invoice_no,
       jobCard: i.job_no,
       customerName: i.customer_name,
+      customerPhone: i.customer_phone,
       labourAmount: parseFloat(i.labour_amount) || 0,
       partsAmount: parseFloat(i.parts_amount) || 0,
       vatPercentage: parseFloat(i.vat_percentage) || 0,

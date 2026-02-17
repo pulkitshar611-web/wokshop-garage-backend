@@ -110,17 +110,37 @@ const createCustomer = async (req, res) => {
       });
     }
 
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mobile number is required'
+      });
+    }
+
+    // Check if phone already exists
+    const [existingPhone] = await pool.execute(
+      'SELECT id FROM customers WHERE phone = ?',
+      [phone]
+    );
+
+    if (existingPhone.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'A customer with this mobile number already exists'
+      });
+    }
+
     // Check if email already exists (if provided)
     if (email) {
-      const [existingCustomers] = await pool.execute(
-        'SELECT id FROM customers WHERE email = ? AND is_deleted = 0',
+      const [existingEmail] = await pool.execute(
+        'SELECT id FROM customers WHERE email = ?',
         [email]
       );
 
-      if (existingCustomers.length > 0) {
+      if (existingEmail.length > 0) {
         return res.status(400).json({
           success: false,
-          error: 'Email already exists'
+          error: 'A customer with this email already exists'
         });
       }
     }
@@ -132,7 +152,7 @@ const createCustomer = async (req, res) => {
       [
         name,
         email || null,
-        phone || null,
+        phone,
         company || null,
         address || null
       ]
@@ -154,12 +174,20 @@ const createCustomer = async (req, res) => {
   } catch (error) {
     console.error('Create customer error:', error);
 
-    // Handle duplicate email error
+    // Handle duplicate error from DB
     if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({
-        success: false,
-        error: 'Email already exists'
-      });
+      if (error.message.includes('phone') || error.message.includes('idx_unique_phone')) {
+        return res.status(400).json({
+          success: false,
+          error: 'A customer with this mobile number already exists'
+        });
+      }
+      if (error.message.includes('email') || error.message.includes('idx_unique_email')) {
+        return res.status(400).json({
+          success: false,
+          error: 'A customer with this email already exists'
+        });
+      }
     }
 
     res.status(500).json({
@@ -181,7 +209,7 @@ const updateCustomer = async (req, res) => {
 
     // Check if customer exists
     const [existingCustomers] = await pool.execute(
-      'SELECT id FROM customers WHERE id = ? AND is_deleted = 0',
+      'SELECT id FROM customers WHERE id = ?',
       [id]
     );
 
@@ -192,17 +220,32 @@ const updateCustomer = async (req, res) => {
       });
     }
 
+    // Check if phone is being changed and if it already exists
+    if (phone) {
+      const [phoneCheck] = await pool.execute(
+        'SELECT id FROM customers WHERE phone = ? AND id != ?',
+        [phone, id]
+      );
+
+      if (phoneCheck.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'A customer with this mobile number already exists'
+        });
+      }
+    }
+
     // Check if email is being changed and if it already exists
     if (email) {
       const [emailCheck] = await pool.execute(
-        'SELECT id FROM customers WHERE email = ? AND id != ? AND is_deleted = 0',
+        'SELECT id FROM customers WHERE email = ? AND id != ?',
         [email, id]
       );
 
       if (emailCheck.length > 0) {
         return res.status(400).json({
           success: false,
-          error: 'Email already exists'
+          error: 'A customer with this email already exists'
         });
       }
     }
@@ -264,10 +307,18 @@ const updateCustomer = async (req, res) => {
     console.error('Update customer error:', error);
 
     if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({
-        success: false,
-        error: 'Email already exists'
-      });
+      if (error.message.includes('phone') || error.message.includes('idx_unique_phone')) {
+        return res.status(400).json({
+          success: false,
+          error: 'A customer with this mobile number already exists'
+        });
+      }
+      if (error.message.includes('email') || error.message.includes('idx_unique_email')) {
+        return res.status(400).json({
+          success: false,
+          error: 'A customer with this email already exists'
+        });
+      }
     }
 
     res.status(500).json({

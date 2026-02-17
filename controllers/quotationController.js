@@ -20,7 +20,7 @@ const generateQuotationNumber = async () => {
 
     const latestQuotationNo = quotations[0].quotation_no;
     const match = latestQuotationNo.match(/QT-(\d+)/);
-    
+
     if (match) {
       const nextNumber = parseInt(match[1]) + 1;
       return `QT-${String(nextNumber).padStart(3, '0')}`;
@@ -41,14 +41,14 @@ const generateQuotationNumber = async () => {
 const getAllQuotations = async (req, res) => {
   try {
     const { status } = req.query;
-    
+
     let query = `
       SELECT 
         q.id, q.quotation_no, q.job_card_id, q.labour_charges,
         q.parts_charges, q.vat_percentage, q.total_amount,
         q.valid_until, q.status, q.created_at, q.updated_at,
         jc.job_no,
-        c.name AS customer_name
+        c.name AS customer_name, c.phone AS customer_phone
       FROM quotations q
       LEFT JOIN job_cards jc ON q.job_card_id = jc.id
       LEFT JOIN customers c ON jc.customer_id = c.id
@@ -70,6 +70,7 @@ const getAllQuotations = async (req, res) => {
       quotationNo: q.quotation_no,
       jobCard: q.job_no,
       customerName: q.customer_name,
+      customerPhone: q.customer_phone,
       labourCharges: parseFloat(q.labour_charges) || 0,
       partsCharges: parseFloat(q.parts_charges) || 0,
       vatPercentage: parseFloat(q.vat_percentage) || 0,
@@ -130,11 +131,11 @@ const getQuotationById = async (req, res) => {
     }
 
     const q = quotations[0];
-    
+
     // Calculate VAT amount and subtotal
     const subtotal = (parseFloat(q.labour_charges) || 0) + (parseFloat(q.parts_charges) || 0);
     const vatAmount = (subtotal * (parseFloat(q.vat_percentage) || 0)) / 100;
-    
+
     const formattedQuotation = {
       id: q.id,
       quotationNo: q.quotation_no,
@@ -254,7 +255,7 @@ const createQuotation = async (req, res) => {
         q.parts_charges, q.vat_percentage, q.total_amount,
         q.valid_until, q.status, q.created_at, q.updated_at,
         jc.job_no,
-        c.name AS customer_name
+        c.name AS customer_name, c.phone AS customer_phone
       FROM quotations q
       LEFT JOIN job_cards jc ON q.job_card_id = jc.id
       LEFT JOIN customers c ON jc.customer_id = c.id
@@ -268,6 +269,7 @@ const createQuotation = async (req, res) => {
       quotationNo: q.quotation_no,
       jobCard: q.job_no,
       customerName: q.customer_name,
+      customerPhone: q.customer_phone,
       labourCharges: parseFloat(q.labour_charges) || 0,
       partsCharges: parseFloat(q.parts_charges) || 0,
       vatPercentage: parseFloat(q.vat_percentage) || 0,
@@ -365,7 +367,7 @@ const updateQuotation = async (req, res) => {
         q.parts_charges, q.vat_percentage, q.total_amount,
         q.valid_until, q.status, q.created_at, q.updated_at,
         jc.job_no,
-        c.name AS customer_name
+        c.name AS customer_name, c.phone AS customer_phone
       FROM quotations q
       LEFT JOIN job_cards jc ON q.job_card_id = jc.id
       LEFT JOIN customers c ON jc.customer_id = c.id
@@ -379,6 +381,7 @@ const updateQuotation = async (req, res) => {
       quotationNo: q.quotation_no,
       jobCard: q.job_no,
       customerName: q.customer_name,
+      customerPhone: q.customer_phone,
       labourCharges: parseFloat(q.labour_charges) || 0,
       partsCharges: parseFloat(q.parts_charges) || 0,
       vatPercentage: parseFloat(q.vat_percentage) || 0,
